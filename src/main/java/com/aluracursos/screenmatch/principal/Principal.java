@@ -3,6 +3,7 @@ package com.aluracursos.screenmatch.principal;
 import com.aluracursos.screenmatch.model.DatosSerie;
 import com.aluracursos.screenmatch.model.DatosTemporadas;
 import com.aluracursos.screenmatch.model.Serie;
+import com.aluracursos.screenmatch.repository.SerieRepository;
 import com.aluracursos.screenmatch.service.ConsumoAPI;
 import com.aluracursos.screenmatch.service.ConvierteDatos;
 import java.util.ArrayList;
@@ -19,6 +20,13 @@ public class Principal {
     private ConvierteDatos conversor = new ConvierteDatos();
 //se crea el metodo buscarSeries() para buscar una serie en una lista de series
     private List<DatosSerie> datosSeries = new ArrayList<>();
+
+    //se crea un atributo del tipo privado SerieRepository para poder usar el repositorio de series
+    private SerieRepository repositorio;
+    // Constructor que recibe el repositorio de series
+    public Principal(SerieRepository repository) {
+        this.repositorio = repository;
+    }
 
     public void muestraElMenu() {
         var opcion = -1;
@@ -76,16 +84,17 @@ public class Principal {
     private void buscarSerieWeb() {
         //se crea el consumo del private del datosSerie con getDatosSerie()
         DatosSerie datos = getDatosSerie();
-        datosSeries.add(datos); //para colora los datos de la lista se crea el consumo datosSeries.add(datos);
+        //se crea una serie con los datos obtenidos de la serie
+        Serie serie = new Serie(datos);
+        repositorio.save(serie);//se guarda la serie en la base de datos
+
+       // datosSeries.add(datos); //para colora los datos de la lista se crea el consumo datosSeries.add(datos);
         System.out.println(datos); //se imprime los datos de la serie
         //mostrar todas las series buscadas
     }
 
     private void mostrarSeriesBuscadas() {
-        List<Serie> series= new ArrayList<>();
-        series = datosSeries.stream()
-                .map(d -> new Serie(d))
-                .collect(Collectors.toList());
+        List<Serie> series= repositorio.findAll(); //se obtiene todas las series de la base de datos
 
         series.stream()
                 .sorted(Comparator.comparing(Serie::getGenero))

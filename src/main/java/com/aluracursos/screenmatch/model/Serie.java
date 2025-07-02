@@ -1,11 +1,21 @@
 package com.aluracursos.screenmatch.model;
 
-import com.aluracursos.screenmatch.service.ConsultaChatGPT;
-import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.persistence.*;
 
+import java.util.List;
 import java.util.OptionalDouble;
 
+@Entity
+@Table(name = "series")
+
 public class Serie {
+
+    @Id
+    @GeneratedValue(strategy =  GenerationType.IDENTITY)
+
+    private Long id;
+
+    @Column(unique = true)
 
     private String titulo;
 
@@ -15,11 +25,23 @@ public class Serie {
 
     private String poster;
 
+    @Enumerated(EnumType.STRING)
+
     private Categria genero;
 
     private String actores;
 
     private String sinopsis;
+
+    //indicacion para JPA para que no los quiero guardar en la base de datos
+    @Transient //indica que este campo no se va a guardar en la base de datos
+
+    //mapeo de la clase Serie a la base de datos
+    private List<Episodio>episodios;
+
+    //constructor bacio para JPA
+    public Serie() {
+    }
 
     //creando un constructor de serie
     public Serie(DatosSerie datosSerie){
@@ -29,7 +51,7 @@ public class Serie {
         this.poster = datosSerie.poster();
         this.genero = Categria.fromString(datosSerie.genero().split(",")[0].trim());
         this.actores = datosSerie.actores();
-        this.sinopsis = ConsultaChatGPT.obtenerTraduccion(datosSerie.sinopsis());
+        this.sinopsis = datosSerie.sinopsis();
 
     }
 //toString para mostrar los datos de la serie
@@ -47,6 +69,16 @@ public class Serie {
     }
 
     // Getters y Setters
+
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getTitulo() {
         return titulo;
     }
