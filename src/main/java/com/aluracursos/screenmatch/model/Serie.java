@@ -34,7 +34,9 @@ public class Serie {
     private String sinopsis;
 
     //indicacion para JPA para que no los quiero guardar en la base de datos
-    @Transient //indica que este campo no se va a guardar en la base de datos
+    // se elimina por que queremos mapear los datos de episodio@Transient //indica que este campo no se va a guardar en la base de datos
+    //se establece una relacion
+    @OneToMany(mappedBy = "serie", cascade = CascadeType.ALL, orphanRemoval = true , fetch = FetchType.EAGER)
 
     //mapeo de la clase Serie a la base de datos
     private List<Episodio>episodios;
@@ -65,11 +67,21 @@ public class Serie {
                 ", evaluacion=" + evaluacion +
                 ", poster='" + poster + '\'' +
                 ", actores='" + actores + '\'' +
-                ", sinopsis='" + sinopsis + '\'';
+                ", sinopsis='" + sinopsis + '\'' +
+                ", episodios=" + episodios ;
     }
 
     // Getters y Setters
 
+
+    public List<Episodio> getEpisodios() {
+        return episodios;
+    }
+
+    public void setEpisodios(List<Episodio> episodios) {
+        episodios.forEach(e -> e.setSerie(this));
+        this.episodios = episodios;
+    }
 
     public Long getId() {
         return id;
