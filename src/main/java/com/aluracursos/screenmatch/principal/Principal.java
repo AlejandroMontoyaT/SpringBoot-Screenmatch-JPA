@@ -14,7 +14,7 @@ public class Principal {
     private final String URL_BASE = "https://www.omdbapi.com/?t=";
     private final String API_KEY = "&apikey=117b0c4a";
     private ConvierteDatos conversor = new ConvierteDatos();
-//se crea el metodo buscarSeries() para buscar una serie en una lista de series
+    //se crea el metodo buscarSeries() para buscar una serie en una lista de series
     private List<DatosSerie> datosSeries = new ArrayList<>();
 
     //se crea un atributo del tipo privado SerieRepository para poder usar el repositorio de series
@@ -22,6 +22,9 @@ public class Principal {
 
     //se crea variabla global de lista serie
     private List<Serie> series;
+
+    private Optional<Serie> serieBuscada;
+
 
     // Constructor que recibe el repositorio de series
     public Principal(SerieRepository repository) {
@@ -38,7 +41,10 @@ public class Principal {
                     4 - Buscar Serie por titulo
                     5 - Top 5 mejores series
                     6 - Buscar series por categoria
-                                  
+                    7 - Filtrar series por temporada y evaluación
+                    8 - Buscar episodios por titulo
+                    9 - top 5 episodios de una serie
+                    
                     0 - Salir
                     """;
             System.out.println(menu);
@@ -52,20 +58,32 @@ public class Principal {
                 case 2:
                     buscarEpisodioPorSerie();
                     break;
-                    case 3:
-                        mostrarSeriesBuscadas();
-                        break;
+                case 3:
+                    mostrarSeriesBuscadas();
+                    break;
                 case 4:
                     buscarSeriesPorTitulo();
                     break;
 
                 case 5:
-                        buscarTop5Series();
-                        break;
+                    buscarTop5Series();
+                    break;
 
                 case 6:
-                        buscarSeriesPorCategoria();
-                        break;
+                    buscarSeriesPorCategoria();
+                    break;
+
+                case 7:
+                    filtrarSeriesPorTemporadaYEvaluacion();
+                    break;
+
+                case 8:
+                    buscarEpisodiosPorTitulo();
+                    break;
+
+                case 9:
+                    buscarTop5Episodios();
+                    break;
 
                 case 0:
                     System.out.println("Cerrando la aplicación...");
@@ -85,6 +103,7 @@ public class Principal {
         DatosSerie datos = conversor.obtenerDatos(json, DatosSerie.class);
         return datos;
     }
+
     private void buscarEpisodioPorSerie() {
         mostrarSeriesBuscadas();//se muestra las series buscadas para que el usuario pueda elegir una desde la base de datos
         System.out.println("Escribe el nombre de la serie que deseas buscar sus episodios");
@@ -110,7 +129,7 @@ public class Principal {
 
             List<Episodio> episodios = temporadas.stream()
                     .flatMap(d -> d.episodios().stream()
-                    .map(e -> new Episodio(d.numero(), e)))
+                            .map(e -> new Episodio(d.numero(), e)))
                     .collect(Collectors.toList());
 
             serieEncontrada.setEpisodios(episodios); //se setea los episodios a la serie encontrada
@@ -121,6 +140,7 @@ public class Principal {
 
 
     }
+
     private void buscarSerieWeb() {
         //se crea el consumo del private del datosSerie con getDatosSerie()
         DatosSerie datos = getDatosSerie();
@@ -128,25 +148,26 @@ public class Principal {
         Serie serie = new Serie(datos);
         repositorio.save(serie);//se guarda la serie en la base de datos
 
-       // datosSeries.add(datos); //para colora los datos de la lista se crea el consumo datosSeries.add(datos);
+        // datosSeries.add(datos); //para colora los datos de la lista se crea el consumo datosSeries.add(datos);
         System.out.println(datos); //se imprime los datos de la serie
         //mostrar todas las series buscadas
     }
 
     private void mostrarSeriesBuscadas() {
-       series= repositorio.findAll(); //se obtiene todas las series de la base de datos
+        series = repositorio.findAll(); //se obtiene todas las series de la base de datos
 
         series.stream()
                 .sorted(Comparator.comparing(Serie::getGenero))
                 .forEach(System.out::println);
 
     }
-    private void buscarSeriesPorTitulo(){
-            System.out.println("Escribe el nombre de la serie que deseas buscar");
-        var nombreSerie = teclado.nextLine();
-        Optional<Serie> serieBuscada = repositorio.findByTituloContainsIgnoreCase(nombreSerie); //se busca la serie por titulo ignorando mayusculas y minusculas
 
-        if(serieBuscada.isPresent()) {
+    private void buscarSeriesPorTitulo() {
+        System.out.println("Escribe el nombre de la serie que deseas buscar");
+        var nombreSerie = teclado.nextLine();
+        serieBuscada = repositorio.findByTituloContainsIgnoreCase(nombreSerie); //se busca la serie por titulo ignorando mayusculas y minusculas
+
+        if (serieBuscada.isPresent()) {
             System.out.println("Serie encontrada: " + serieBuscada.get());
         } else {
             System.out.println("No se encontró la serie con el título: " + nombreSerie);
@@ -154,7 +175,7 @@ public class Principal {
 
     }
 
-    private void buscarTop5Series(){
+    private void buscarTop5Series() {
         List<Serie> topSeries = repositorio.findTop5ByOrderByEvaluacionDesc(); //se obtiene las 5 mejores series ordenadas por evaluacion de forma descendente
         //se imprime las 5 mejores series
         topSeries.forEach(serie -> {
@@ -166,7 +187,7 @@ public class Principal {
         });
     }
 
-    private void buscarSeriesPorCategoria(){
+    private void buscarSeriesPorCategoria() {
         System.out.println("Escribe el genero/ categoría de la serie que deseas buscar");
         var genero = teclado.nextLine();
         //se busca la serie por genero
@@ -177,5 +198,42 @@ public class Principal {
 
     }
 
+    public void filtrarSeriesPorTemporadaYEvaluacion() {
+        System.out.println("¿Filtrar séries con cuántas temporadas? ");
+        var totalTemporadas = teclado.nextInt();
+        teclado.nextLine();
+        System.out.println("¿Com evaluación apartir de cuál valor? ");
+        var evaluacion = teclado.nextDouble();
+        teclado.nextLine();
+        List<Serie> filtroSeries = repositorio.seriesPorTemparadaYEvaluacion(totalTemporadas, evaluacion);
+        System.out.println("*** Series filtradas ***");
+        filtroSeries.forEach(s ->
+                System.out.println(s.getTitulo() + "  - evaluacion: " + s.getEvaluacion()));
+    }
+
+    // Método para buscar episodios por título
+    private void buscarEpisodiosPorTitulo() {
+        System.out.println("Escribe el nombre del episodio que deseas buscar");
+        var nombreEpisodio = teclado.nextLine();
+        List<Episodio> episodiosEncontrados = repositorio.episodiosPorNombre(nombreEpisodio);
+        episodiosEncontrados.forEach(e ->
+                System.out.printf("Serie: %s Temporada %s Episodio %s Evaluación %s\n",
+                        e.getSerie().getTitulo(), e.getTemporada(), e.getNumeroEpisodio(), e.getEvaluacion()));
+
+    }
+
+    // Buscar top 5 episodios de una serie
+    private void buscarTop5Episodios() {
+        buscarSeriesPorTitulo();
+        if (serieBuscada.isPresent()) {
+            Serie serie = serieBuscada.get();
+            List<Episodio> topEpisodios = repositorio.top5Episodios(serie);
+            topEpisodios.forEach( e ->
+            System.out.printf("- Serie: %s - Temporada %s - Episodio %s - Evaluación %s\n",
+                    e.getSerie().getTitulo(), e.getTemporada(), e.getTitulo(), e.getEvaluacion()));
+
+        }
+
+    }
 }
 
